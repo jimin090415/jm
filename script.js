@@ -12,14 +12,14 @@ let successfulShots = 0;
 
 // 물리 환경 설정
 const gravity = 0.22;
-// 조이스틱을 우측(315)에서 화면 정중앙(170)으로 변경!
+// 조이스틱 위치: 캔버스 가로(340)의 정중앙인 170으로 선언
 const baseSpringX = 170; 
 const baseSpringY = 390;
 
 let ball = { x: baseSpringX, y: baseSpringY, vx: 0, vy: 0, radius: 11, isLaunched: false, color: '#ff4757' };
 let spring = { x: baseSpringX, y: baseSpringY, dragStartX: 0, dragStartY: 0, offsetX: 0, offsetY: 0, isDragging: false };
 
-// 일렬로 선 채점 구멍 배치
+// 일렬로 선 채점 구멍 배치 (Y축 115)
 let holes = [
   { x: 45,  y: 115, r: 24, val: 0, color: '#ff4757' },
   { x: 115, y: 115, r: 24, val: 0, color: '#2ed573' },
@@ -130,7 +130,7 @@ function startDrag(e) {
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
 
-  // 중앙 조이스틱 판정 영역 범위 수정 (중앙 x축 170 근처)
+  // 조이스틱 작동 클릭 범위를 하단 중앙(X: 120~220, Y: 320 이상)으로 매핑
   if (mx > 120 && mx < 220 && my > 320) {
     spring.isDragging = true;
     spring.dragStartX = mx;
@@ -149,7 +149,7 @@ function doDrag(e) {
 
   if (dy < 0) dy = 0; 
   if (dy > 70) dy = 70;
-  if (dx < -60) dx = -60; // 중앙 배치에 맞춰 가동 좌우 범위 유연화
+  if (dx < -60) dx = -60; 
   if (dx > 60) dx = 60;
 
   spring.offsetX = dx;
@@ -167,7 +167,6 @@ function endDrag() {
   const powerX = spring.offsetX;
 
   if (powerY > 5 || Math.abs(powerX) > 5) {
-    // 당긴 반대 방향으로 힘 전달 (중앙 발사대 물리 최적화)
     ball.vy = -powerY * 0.65; 
     ball.vx = -powerX * 0.45; 
     ball.isLaunched = true;
@@ -185,6 +184,7 @@ function triggerFlash(type) {
   setTimeout(() => cabinet.classList.remove(className), 200);
 }
 
+// 숫자 가독성을 최대로 끌어올린 하이 콘트라스트 그래픽 처리 함수
 function drawNeonHole(h) {
   // 1. 공이 들어갈 어두운 구멍 본체
   ctx.beginPath();
@@ -196,7 +196,7 @@ function drawNeonHole(h) {
   ctx.strokeStyle = h.color;
   ctx.stroke();
 
-  // 2. 구멍 위쪽 보드판 배경
+  // 2. 구멍 위쪽 보드판 배경 (무조건 하얀색 원판 고정)
   let plateY = h.y - 52; 
   let plateRadius = 18;  
 
@@ -209,15 +209,17 @@ function drawNeonHole(h) {
   ctx.strokeStyle = '#4a3b32';
   ctx.stroke();
 
-  // 3. 팻말 내부 숫자 렌더링
+  // 3. 내부 숫자 글씨 쓰기 (크기 키우고 외곽선 두껍게)
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = 'bold 22px sans-serif'; 
 
+  // 글자 바깥 테두리 선명화
   ctx.lineWidth = 4;
   ctx.strokeStyle = '#000000'; 
   ctx.strokeText(h.val, h.x, plateY + 1);
 
+  // 글자 알맹이 채우기
   ctx.fillStyle = '#ffffff'; 
   ctx.fillText(h.val, h.x, plateY + 1);
 }
@@ -251,98 +253,5 @@ function drawCrystalStick() {
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 1. 구멍들 배치
+  // 1. 구멍 및 보기판 렌더링
   holes.forEach(drawNeonHole);
-
-  // 보드 곡선 가이드라인 테두리 (구조 변화에 맞춰 깔끔하게 마감)
-  ctx.beginPath();
-  ctx.moveTo(335, 420);
-  ctx.lineTo(335, 120);
-  ctx.arc(170, 120, 165, 0, Math.PI, true);
-  ctx.lineWidth = 7;
-  ctx.strokeStyle = '#ffcc00';
-  ctx.stroke();
-
-  // 2. 조준 점선 가이드라인
-  if (spring.isDragging && (spring.offsetY > 5 || Math.abs(spring.offsetX) > 5)) {
-    ctx.beginPath();
-    ctx.setLineDash([5, 4]);
-    ctx.moveTo(baseSpringX, baseSpringY - 20);
-    let targetX = baseSpringX - spring.offsetX * 4.2;
-    let targetY = baseSpringY - spring.offsetY * 4.2;
-    ctx.lineTo(targetX, targetY);
-    ctx.strokeStyle = 'rgba(0, 150, 255, 0.8)';
-    ctx.lineWidth = 4;
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // 3. 레버 스틱 드로우
-  drawCrystalStick();
-
-  // 4. 탱탱볼 물리 엔진 및 수학 정오 판정
-  if (ball.isLaunched) {
-    ball.vy += gravity;
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-
-    // 중앙 발사에 맞게 좌우 벽면 튕김 밸런스 조정
-    if (ball.x - ball.radius < 5) { ball.x = 5 + ball.radius; ball.vx = -ball.vx * 0.76; }
-    if (ball.x + ball.radius > 335) { ball.x = 335 - ball.radius; ball.vx = -ball.vx * 0.76; }
-    if (ball.y - ball.radius < 5) { ball.y = 5 + ball.radius; ball.vy = -ball.vy * 0.76; }
-
-    holes.forEach(h => {
-      let dist = Math.sqrt((ball.x - h.x)**2 + (ball.y - h.y)**2);
-      if (dist < h.r - 1) {
-        if (h.val === currentAnswer) {
-          score += 100; 
-          successfulShots++;
-          document.getElementById('feedback').textContent = `🎯 정답! 정답은 ${currentAnswer} 입니다! (+100점)`;
-          triggerFlash('success');
-        } else {
-          score = Math.max(0, score - 30); 
-          document.getElementById('feedback').textContent = `❌ 오답! 앗, 정답은 ${currentAnswer}였어요! (-30점)`;
-          triggerFlash('fail');
-        }
-        
-        document.getElementById('score').textContent = score;
-        makeNewQuestion(); 
-        resetBall();
-      }
-    });
-
-    if (ball.y > canvas.height + 20) {
-      document.getElementById('feedback').textContent = '구멍에 넣지 못했어요! 다시 조준해 보세요 😢';
-      triggerFlash('fail');
-      resetBall();
-    }
-  }
-
-  // 5. 주인공 탱탱볼 드로잉
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-  ctx.fillStyle = ball.color;
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = '#fff';
-  ctx.stroke();
-
-  if (time > 0) requestAnimationFrame(update);
-}
-
-function endGame() {
-  clearInterval(timer);
-  document.getElementById('playScreen').classList.add('hidden');
-  document.getElementById('endScreen').classList.remove('hidden');
-  
-  let accuracyPercent = totalShots > 0 ? Math.round((successfulShots / totalShots) * 100) : 0;
-  
-  let diffText = '🌸 더하기 모드';
-  if(selectedDifficulty === 'normal') diffText = '🍊 덧뺄셈 혼합 모드';
-  if(selectedDifficulty === 'hard') diffText = '🍇 구구단 곱셈 모드';
-
-  document.getElementById('finalDifficulty').textContent = diffText;
-  document.getElementById('finalScore').textContent = score;
-  document.getElementById('totalCount').textContent = successfulShots;
-  document.getElementById('accuracy').textContent = accuracyPercent + '%';
-}
