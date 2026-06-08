@@ -18,12 +18,12 @@ const baseSpringY = 390;
 let ball = { x: baseSpringX, y: baseSpringY, vx: 0, vy: 0, radius: 11, isLaunched: false, color: '#ff4757' };
 let spring = { x: baseSpringX, y: baseSpringY, dragStartX: 0, dragStartY: 0, offsetX: 0, offsetY: 0, isDragging: false };
 
-// 구멍의 가독성과 골인 안정성을 위해 Y축을 105로 변경 (한 줄 정렬 유지)
+// 공이 완전히 골인할 수 있도록 Y축을 115로 조절
 let holes = [
-  { x: 45,  y: 105, r: 24, val: 0, color: '#ff4757' },
-  { x: 115, y: 105, r: 24, val: 0, color: '#2ed573' },
-  { x: 185, y: 105, r: 24, val: 0, color: '#1e90ff' },
-  { x: 255, y: 105, r: 24, val: 0, color: '#ffa502' }
+  { x: 45,  y: 115, r: 24, val: 0, color: '#ff4757' },
+  { x: 115, y: 115, r: 24, val: 0, color: '#2ed573' },
+  { x: 185, y: 115, r: 24, val: 0, color: '#1e90ff' },
+  { x: 255, y: 115, r: 24, val: 0, color: '#ffa502' }
 ];
 
 let currentAnswer = 0; 
@@ -182,47 +182,45 @@ function triggerFlash(type) {
   setTimeout(() => cabinet.classList.remove(className), 200);
 }
 
-// 구멍 디자인 및 상단 보기 간판 고해상도 리드로잉 파트
+// 숫자가 무조건 선명하게 보이도록 대폭 개선된 구멍 렌더링 함수
 function drawNeonHole(h) {
-  // 1. 컴컴한 구멍 입구 (공이 쏙 들어가게 완전 검은색에 가깝게 처리)
+  // 1. 공이 들어갈 어두운 구멍 본체
   ctx.beginPath();
   ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
-  ctx.fillStyle = '#221a18'; 
+  ctx.fillStyle = '#1e1918'; 
   ctx.fill();
   
-  // 구멍 입구 링 테두리
   ctx.lineWidth = 4;
   ctx.strokeStyle = h.color;
   ctx.stroke();
 
-  // 2. 구멍 위쪽에 배치할 '숫자 팻말 보드판' (가독성 핵심 요인)
-  let boardW = 46;
-  let boardH = 32;
-  let boardX = h.x - boardW / 2;
-  let boardY = h.y - 65; // 구멍 위쪽에 붕 뜨게 정렬
+  // 2. 구멍 위쪽 보드판 배경 (완전 흰색 원형 팻말로 변경해 시인성 극대화)
+  let plateY = h.y - 52; // 구멍 바로 위에 안착
+  let plateRadius = 18;  // 글자를 감싸는 넉넉한 크기
 
-  // 팻말 그림자 광채 효과 추가
-  ctx.shadowColor = 'rgba(0,0,0,0.15)';
-  ctx.shadowBlur = 4;
-  
-  // 하얀색 배경 보드판
-  ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.roundRect(boardX, boardY, boardW, boardH, 8); // 둥근 사각형 팻말
+  ctx.arc(h.x, plateY, plateRadius, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff'; // 배경 무조건 흰색 고정
   ctx.fill();
-  ctx.shadowBlur = 0; // 효과 초기화
 
-  // 보드판의 아기자기한 컬러풀 테두리 두르기
+  // 팻말 테두리를 굵게 주어 배경과 분리
   ctx.lineWidth = 3;
-  ctx.strokeStyle = h.color;
+  ctx.strokeStyle = '#4a3b32';
   ctx.stroke();
 
-  // 3. 팻말 한가운데에 크고 진한 검은색 숫자 쓰기
-  ctx.fillStyle = '#222222';
-  ctx.font = 'black 18px sans-serif'; // 아주 두껍고 큼직한 폰트 배정
+  // 3. 팻말 내부 숫자 렌더링 (폰트 크기 업, 검은색 외곽선 추가)
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(h.val, h.x, boardY + boardH / 2 + 1);
+  ctx.font = 'bold 22px sans-serif'; // 글씨 크기 확대
+
+  // 글자 테두리 (Stroke) 먼저 그려서 선명하게 만들기
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#000000'; // 검은색 외곽선
+  ctx.strokeText(h.val, h.x, plateY + 1);
+
+  // 안쪽 글자 채우기 (Fill)
+  ctx.fillStyle = '#ffffff'; // 흰색 글씨로 대비 효과 극대화
+  ctx.fillText(h.val, h.x, plateY + 1);
 }
 
 function drawCrystalStick() {
@@ -254,7 +252,7 @@ function drawCrystalStick() {
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 1. 일렬 팻말 구멍 시스템 렌더링
+  // 1. 숫자 가독성 최적화 버전 구멍들 배치
   holes.forEach(drawNeonHole);
 
   // 보드 곡선 가이드라인 테두리
