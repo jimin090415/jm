@@ -11,7 +11,7 @@ body {
 }
 
 .game {
-  width: 380px;
+  width: 340px; /* 캔버스 너비와 완벽히 일치시켜 오차 제거 */
   padding: 25px;
   border-radius: 30px;
   background: #ffdb4d; 
@@ -74,16 +74,19 @@ body {
 
 .game-area {
   position: relative;
+  width: 340px;
+  height: 420px;
   background: radial-gradient(circle at center, #ffffff 0%, #e6f7ff 60%, #b3e6ff 100%);
   border-radius: 25px;
   border: 4px solid #fff;
   box-shadow: inset 0 5px 15px rgba(0,0,0,0.1);
   overflow: hidden;
-  display: flex;
-  justify-content: center;
 }
 
 canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
   background: transparent;
 }
