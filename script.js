@@ -12,13 +12,14 @@ let successfulShots = 0;
 
 // 물리 환경 설정
 const gravity = 0.22;
-const baseSpringX = 315; 
+// 조이스틱을 우측(315)에서 화면 정중앙(170)으로 변경!
+const baseSpringX = 170; 
 const baseSpringY = 390;
 
 let ball = { x: baseSpringX, y: baseSpringY, vx: 0, vy: 0, radius: 11, isLaunched: false, color: '#ff4757' };
 let spring = { x: baseSpringX, y: baseSpringY, dragStartX: 0, dragStartY: 0, offsetX: 0, offsetY: 0, isDragging: false };
 
-// 공이 완전히 골인할 수 있도록 Y축을 115로 조절
+// 일렬로 선 채점 구멍 배치
 let holes = [
   { x: 45,  y: 115, r: 24, val: 0, color: '#ff4757' },
   { x: 115, y: 115, r: 24, val: 0, color: '#2ed573' },
@@ -129,7 +130,8 @@ function startDrag(e) {
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
 
-  if (mx > 270 && my > 320) {
+  // 중앙 조이스틱 판정 영역 범위 수정 (중앙 x축 170 근처)
+  if (mx > 120 && mx < 220 && my > 320) {
     spring.isDragging = true;
     spring.dragStartX = mx;
     spring.dragStartY = my;
@@ -147,8 +149,8 @@ function doDrag(e) {
 
   if (dy < 0) dy = 0; 
   if (dy > 70) dy = 70;
-  if (dx < -45) dx = -45; 
-  if (dx > 45) dx = 45;
+  if (dx < -60) dx = -60; // 중앙 배치에 맞춰 가동 좌우 범위 유연화
+  if (dx > 60) dx = 60;
 
   spring.offsetX = dx;
   spring.offsetY = dy;
@@ -165,8 +167,9 @@ function endDrag() {
   const powerX = spring.offsetX;
 
   if (powerY > 5 || Math.abs(powerX) > 5) {
+    // 당긴 반대 방향으로 힘 전달 (중앙 발사대 물리 최적화)
     ball.vy = -powerY * 0.65; 
-    ball.vx = -powerX * 0.45 - 1.0 - (Math.random() * 1.5);
+    ball.vx = -powerX * 0.45; 
     ball.isLaunched = true;
     totalShots++;
   }
@@ -182,7 +185,6 @@ function triggerFlash(type) {
   setTimeout(() => cabinet.classList.remove(className), 200);
 }
 
-// 숫자가 무조건 선명하게 보이도록 대폭 개선된 구멍 렌더링 함수
 function drawNeonHole(h) {
   // 1. 공이 들어갈 어두운 구멍 본체
   ctx.beginPath();
@@ -194,32 +196,29 @@ function drawNeonHole(h) {
   ctx.strokeStyle = h.color;
   ctx.stroke();
 
-  // 2. 구멍 위쪽 보드판 배경 (완전 흰색 원형 팻말로 변경해 시인성 극대화)
-  let plateY = h.y - 52; // 구멍 바로 위에 안착
-  let plateRadius = 18;  // 글자를 감싸는 넉넉한 크기
+  // 2. 구멍 위쪽 보드판 배경
+  let plateY = h.y - 52; 
+  let plateRadius = 18;  
 
   ctx.beginPath();
   ctx.arc(h.x, plateY, plateRadius, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff'; // 배경 무조건 흰색 고정
+  ctx.fillStyle = '#ffffff'; 
   ctx.fill();
 
-  // 팻말 테두리를 굵게 주어 배경과 분리
   ctx.lineWidth = 3;
   ctx.strokeStyle = '#4a3b32';
   ctx.stroke();
 
-  // 3. 팻말 내부 숫자 렌더링 (폰트 크기 업, 검은색 외곽선 추가)
+  // 3. 팻말 내부 숫자 렌더링
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold 22px sans-serif'; // 글씨 크기 확대
+  ctx.font = 'bold 22px sans-serif'; 
 
-  // 글자 테두리 (Stroke) 먼저 그려서 선명하게 만들기
   ctx.lineWidth = 4;
-  ctx.strokeStyle = '#000000'; // 검은색 외곽선
+  ctx.strokeStyle = '#000000'; 
   ctx.strokeText(h.val, h.x, plateY + 1);
 
-  // 안쪽 글자 채우기 (Fill)
-  ctx.fillStyle = '#ffffff'; // 흰색 글씨로 대비 효과 극대화
+  ctx.fillStyle = '#ffffff'; 
   ctx.fillText(h.val, h.x, plateY + 1);
 }
 
@@ -252,14 +251,14 @@ function drawCrystalStick() {
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 1. 숫자 가독성 최적화 버전 구멍들 배치
+  // 1. 구멍들 배치
   holes.forEach(drawNeonHole);
 
-  // 보드 곡선 가이드라인 테두리
+  // 보드 곡선 가이드라인 테두리 (구조 변화에 맞춰 깔끔하게 마감)
   ctx.beginPath();
-  ctx.moveTo(295, 420);
-  ctx.lineTo(295, 120);
-  ctx.arc(150, 120, 145, 0, Math.PI, true);
+  ctx.moveTo(335, 420);
+  ctx.lineTo(335, 120);
+  ctx.arc(170, 120, 165, 0, Math.PI, true);
   ctx.lineWidth = 7;
   ctx.strokeStyle = '#ffcc00';
   ctx.stroke();
@@ -287,9 +286,9 @@ function update() {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
+    // 중앙 발사에 맞게 좌우 벽면 튕김 밸런스 조정
     if (ball.x - ball.radius < 5) { ball.x = 5 + ball.radius; ball.vx = -ball.vx * 0.76; }
-    if (ball.x + ball.radius > 290 && ball.y > 120) { ball.x = 290 - ball.radius; ball.vx = -ball.vx * 0.76; }
-    if (ball.x + ball.radius > canvas.width) { ball.x = canvas.width - ball.radius; ball.vx = -ball.vx * 0.76; }
+    if (ball.x + ball.radius > 335) { ball.x = 335 - ball.radius; ball.vx = -ball.vx * 0.76; }
     if (ball.y - ball.radius < 5) { ball.y = 5 + ball.radius; ball.vy = -ball.vy * 0.76; }
 
     holes.forEach(h => {
