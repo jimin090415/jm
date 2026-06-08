@@ -55,7 +55,6 @@ body {
   transition: width 1s linear;
 }
 
-/* 수학 문제 보드 디자인 */
 .question-box {
   background: #4a3b32;
   color: #fffb00;
